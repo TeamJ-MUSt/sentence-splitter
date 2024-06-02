@@ -1,13 +1,12 @@
 import argparse
 import fugashi
-from googletrans import Translator
-
 # This is our sample text.
 # "Fugashi" is a Japanese snack primarily made of gluten.
 #text = "空にある何かを見つめてたら12cars"
 # The Tagger object holds state about the dictionary. 
 
-#空にある何かを見つめてたらそれは星だって君がおしえてくれたまるでそれは僕らみたいに
+#何十回 何百回 ぶつかりあって​\n何十年  何百年  昔の光が​
+#空にある何かを見つめてたら それは星だって君がおしえてくれた まるでそれは僕らみたいに
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Splits a sentence into multiple chunks")
     parser.add_argument('query', type=str, help='The sentence to split')
@@ -16,11 +15,6 @@ def parse_arguments():
 
     return args.query.strip()
 
-def translate_japanese_to_korean(sentence):
-    translator = Translator()
-    translation = translator.translate(sentence, src='ja', dest='ko')
-    return translation.text
-
 if __name__ == "__main__":
     query = parse_arguments()
 
@@ -28,22 +22,19 @@ if __name__ == "__main__":
 
     words = [word for word in tagger(query)]
 
-    splitter = ['助詞', '助動詞', '動詞'] #조사, 조동사
-    chuncks = ['']
-    slice_next = False
+    glue_to_front = ['助詞', '助動詞', '接尾辞'] #조사, 조동사, 접미사
+    glue_back = ['数詞'] #수사, ?형용사
+    chuncks = []
+    back_glued = False
     for i, word in enumerate(words):
-        if word.feature.pos1 in splitter:
-            if word.feature.pos1 == '動詞':
-                chuncks.append(word.surface)
-            else:
+        #print(word.surface, word.feature.pos1, word.feature.pos2)
+        if word.feature.pos1 in glue_to_front or back_glued:
+            if len(chuncks) > 0:
                 chuncks[-1] += word.surface
-            slice_next  =  True
+            else:
+                chuncks.append(word.surface)
         else:
-            if slice_next:
-                chuncks.append(word.surface)
-                slice_next = False
-            else:
-                chuncks[-1] += word.surface
-
+            chuncks.append(word.surface)
+            
+        back_glued = word.feature.pos1 in glue_back or word.feature.pos2 in glue_back
     print(chuncks)
-    #print(translate_japanese_to_korean(query))
